@@ -12,7 +12,7 @@ const Home = () => {
 
   function handleSubmit(event) {
     event.preventDefault();
-    if (file && file.name.endsWith('.pptx')) {
+    if (file) {
       navigate(`/template`,  { state: { file } })
     } else {
       alert('Please upload a valid .pptx file.')
@@ -25,7 +25,7 @@ const Home = () => {
       <div className="upload-file-container">
         <form onSubmit={handleSubmit}>
           <h1>Upload the PPTX file</h1>
-          <input id="file-upload" type="file" onChange={handleChange}/>
+          <input id="file-upload" type="file" onChange={handleChange} accept='.pptx' />
           <button type="submit">Upload</button>
         </form>
       </div>

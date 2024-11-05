@@ -1,40 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { unzipFile, getAttributeValues, updateSlides } from '../functions/xmlFunctions';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { unzipFile, getAttributeValues, generateUpdatedFile } from '../functions/xmlFunctions';
 
 const EditTemplate = () => {
   const { state } = useLocation();
   const { file } = state;
+  const [slidesData, setSlidesData] = useState(null);
   const [attributeValues, setAttributeValues] = useState([]);
-  const [inputValues, setInputValues] = useState({});
+  const [inputValues, setInputValues] = useState([]);
 
   const handleInputChange = (event, slideIndex, attribute) => {
     const { value } = event.target;
-    setInputValues(prevValues => ({
-      ...prevValues,
-      [slideIndex]: {
-        ...prevValues[slideIndex],
-        [attribute]: value,
-      }
-    }));
+    setInputValues(prevValues => {
+      const updatedValues = [...prevValues];
+      updatedValues[slideIndex] = {
+        ...updatedValues[slideIndex],
+        [attribute]: value
+      };
+      return updatedValues;
+    });
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log('Submitted dictionary:', inputValues);
-    // Perform further actions like updating the slides or sending data to an API
+    const hasEmptyValues = inputValues.some(slide =>
+      Object.values(slide).some(value => value === "")
+    );
+    if (hasEmptyValues) {
+      alert('Please fill in all fields for each slide.');
+    } else {
+      console.log(slidesData);
+      
+      generateUpdatedFile(slidesData, inputValues, file);
+      console.log('Submitted values:', inputValues);
+    }
   };
 
   useEffect(() => {
     const fetchXmlData = async () => {
       try {
         const slides = await unzipFile(file);
-        setAttributeValues(getAttributeValues(slides));
+        const initialAttributeValues = getAttributeValues(slides);
+        setSlidesData(slides);
+        setAttributeValues(initialAttributeValues);
+        setInputValues(initialAttributeValues);
       } catch (error) {
         console.error('Error fetching XML:', error);
       }
     };
-    
+
     if (file) {
       fetchXmlData();
     }
@@ -47,7 +61,7 @@ const EditTemplate = () => {
         {attributeValues.map((slideAttributes, slideIndex) => (
           <div key={`slide-${slideIndex}`}>
             <h2>Slide {slideIndex + 1}</h2>
-            {slideAttributes.map((attribute, attributeIndex) => (
+            {Object.keys(slideAttributes).map((attribute, attributeIndex) => (
               <div key={`attribute-${attributeIndex}`} className='inputs-container'>
                 <label htmlFor={`input-${slideIndex}-${attributeIndex}`}>{attribute}:</label>
                 <input 

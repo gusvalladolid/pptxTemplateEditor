@@ -4,14 +4,18 @@ import JSZip from 'jszip';
 const xmlRoute = 'ppt/slides/slide';
 const regex = /\w+AttributeValue\d+/g;
 
-const unzipFile = async (file) => {
+const getSlidesData = async (file) => {
   const bufferFile = await readFileAsArrayBuffer(file);
-  const zip = await JSZip.loadAsync(bufferFile);
+  return JSZip.loadAsync(bufferFile);
+}
+
+const unzipFile = async (file) => {
+  const fileData = await getSlidesData(file);
   
-  const slideFiles = Object.keys(zip.files).filter((fileName) => fileName.startsWith(xmlRoute));
+  const slideFiles = Object.keys(fileData.files).filter((fileName) => fileName.startsWith(xmlRoute));
 
   const slidePromises = slideFiles.map((slideFile) => {
-    return zip.file(slideFile).async('string').then((data) => {
+    return fileData.file(slideFile).async('string').then((data) => {
       return new Promise((resolve, reject) => {
         xml2js.parseString(data, (err, result) => {
           if (err) {
@@ -35,20 +39,53 @@ const readFileAsArrayBuffer = (file) => {
   });
 };
 
-const updateSlides = (slides, attributeDictionary) => {
-  slides.map(slide => {
-    
-    const attributeValues = getAttributeValues(slide);
-    return attributeValues;
-  });
-}
-
 const getAttributeValues = (slides) => {
-  const attributeValues = slides.map(slide => {
+  const attributeValues = slides.map((slide) => {
     const attributeValue = slide.match(regex);
-    return attributeValue;
-  });
+    const attributeObject = attributeValue.reduce((acc, attribute) => {
+      acc[attribute] = "";
+      return acc;
+    }, {});
+    
+    return attributeObject;
+  }); 
   return attributeValues;
-}
+};
 
-export { unzipFile, getAttributeValues, updateSlides };
+const generateUpdatedFile = async (slides, attributeDictionaries, file) => {
+  const updatedSlides = updateSlidesContent(slides, attributeDictionaries);
+  const builder = new xml2js.Builder();
+  const fileData = await getSlidesData(file);
+
+  updatedSlides.forEach((slide, slideIndex) => {
+    let slideFileName = `${xmlRoute}${slideIndex+1}.xml`;
+    const updatedXmlContent = builder.buildObject(JSON.parse(slide));
+    fileData.file(slideFileName, updatedXmlContent);
+  });
+
+  const updatedFile = await fileData.generateAsync({type: 'blob'});
+  const url = URL.createObjectURL(updatedFile);
+  // Trigger file download
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'updatedFile.pptx';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  console.log('UPDATED SLIDES', updatedSlides);
+};
+
+const updateSlidesContent = (slides, attributeDictionaries) => {
+  return slides.map((slide, slideIndex) => {
+    let updatedSlide = slide;
+    const attributeDictionary = attributeDictionaries[slideIndex];
+    Object.keys(attributeDictionary).forEach(key => {
+      const regex = new RegExp(key, 'g');
+      updatedSlide = updatedSlide.replace(regex, attributeDictionary[key] || ''); 
+    });
+    return updatedSlide;
+  });
+};
+
+export { unzipFile, getAttributeValues, generateUpdatedFile };

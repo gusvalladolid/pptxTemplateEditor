@@ -1,0 +1,45 @@
+/* editTemplate.css */
+body {
+  background-color: #f4f4f4;
+}
+
+.container-edit-template {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.inputs-container {
+  display: flex;
+  flex-direction: row;
+} 
+
+.single-input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.submit-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-heading {
+  text-align: center;
+  font-size: 2rem;
+} 
+
+.slide-container {
+
+}
+
+.slide-heading {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}

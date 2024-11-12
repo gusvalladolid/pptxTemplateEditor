@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { unzipFile, getAttributeValues, generateUpdatedFile } from '../functions/xmlFunctions';
+import AttributeInput from '../components/attributeInputs';
+import './styles/editTemplate.css';
 
 const EditTemplate = () => {
+  const navigate = useNavigate();
   const { state } = useLocation();
   const { file } = state;
   const [slidesData, setSlidesData] = useState(null);
@@ -11,6 +14,10 @@ const EditTemplate = () => {
 
   const handleInputChange = (event, slideIndex, attribute) => {
     const { value } = event.target;
+    const textarea = event.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  
     setInputValues(prevValues => {
       const updatedValues = [...prevValues];
       updatedValues[slideIndex] = {
@@ -29,10 +36,8 @@ const EditTemplate = () => {
     if (hasEmptyValues) {
       alert('Please fill in all fields for each slide.');
     } else {
-      console.log(slidesData);
-      
       generateUpdatedFile(slidesData, inputValues, file);
-      console.log('Submitted values:', inputValues);
+      navigate('/', { state: { isSubmitted: true } });
     }
   };
 
@@ -55,28 +60,29 @@ const EditTemplate = () => {
   }, [file]);
 
   return (
-    <div>
-      <h1>Edit Template</h1> 
-      <form onSubmit={handleSubmit}>
+    <div className="container-edit-template">
+      <h1 className="main-heading">Edit Template</h1>
+      <form onSubmit={handleSubmit} className="form">
+        <div className='inputs-container'>
         {attributeValues.map((slideAttributes, slideIndex) => (
-          <div key={`slide-${slideIndex}`}>
-            <h2>Slide {slideIndex + 1}</h2>
+          <div key={`slide-${slideIndex}`} className="single-input-container">
+            <h2 className="slide-heading">Slide {slideIndex + 1}</h2>
             {Object.keys(slideAttributes).map((attribute, attributeIndex) => (
-              <div key={`attribute-${attributeIndex}`} className='inputs-container'>
-                <label htmlFor={`input-${slideIndex}-${attributeIndex}`}>{attribute}:</label>
-                <input 
-                  type='text'
-                  id={`input-${slideIndex}-${attributeIndex}`}
-                  placeholder='Input Value'
-                  name={attribute}
-                  value={inputValues[slideIndex]?.[attribute] || ''}
-                  onChange={(e) => handleInputChange(e, slideIndex, attribute)}
-                />
-              </div>
+              <AttributeInput
+                key={`attribute-${attributeIndex}`}
+                slideIndex={slideIndex}
+                attributeIndex={attributeIndex}
+                attribute={attribute}
+                value={inputValues[slideIndex]?.[attribute] || ''}
+                handleInputChange={handleInputChange}
+              />
             ))}
           </div>
         ))}
-        <button type='submit'>Submit</button>
+        </div>
+        <div className='submit-container'>
+          <button type="submit" className="submit-button">Submit</button>
+        </div>
       </form>
     </div>
   );
